@@ -17,7 +17,7 @@ export default function AdminPage() {
 
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
-
+  const [search, setSearch] = useState("");
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [image, setImage] = useState("");
@@ -321,12 +321,28 @@ export default function AdminPage() {
 
           <div className="bg-white text-black rounded-3xl shadow-2xl p-10">
             <h2 className="text-4xl font-bold mb-6">Products</h2>
-
+<input
+  type="text"
+  placeholder="Search products..."
+  value={search}
+  onChange={(e)=>
+    setSearch(e.target.value)
+  }
+  className="w-full border border-gray-300 p-4 rounded-2xl mb-6 outline-none focus:ring-2 focus:ring-black"
+/>
             {products.length === 0 ? (
               <p className="text-gray-600">No products added yet.</p>
             ) : (
               <div className="space-y-5 max-h-[600px] overflow-y-auto pr-2">
-                {products.map((product) => (
+                {products
+  .filter((product)=>
+    product.name
+      ?.toLowerCase()
+      .includes(
+        search.toLowerCase()
+      )
+  )
+  .map((product) => (
                   <div
                     key={product.id}
                     className="bg-gray-100 text-black rounded-2xl p-5 flex gap-5 items-center"
