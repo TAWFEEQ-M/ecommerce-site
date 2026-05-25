@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
 import { db } from "@/lib/firebase";
-
 import {
   collection,
   addDoc,
@@ -24,8 +22,11 @@ export default function AdminPage() {
   const [price, setPrice] = useState("");
   const [image, setImage] = useState("");
   const [description, setDescription] = useState("");
-
   const [editingId, setEditingId] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  const cloudName = "dc8wie32s";
+  const uploadPreset = "ecommerce_upload";
 
   const formatDate = (dateValue: any) => {
     if (!dateValue) return "No date";
@@ -74,6 +75,38 @@ export default function AdminPage() {
     setOrders(orderList);
   };
 
+  const uploadImage = async (file: File) => {
+    setUploading(true);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", uploadPreset);
+
+    try {
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.secure_url) {
+        setImage(data.secure_url);
+        alert("Image Uploaded ✔");
+      } else {
+        alert("Image upload failed");
+      }
+    } catch (error) {
+      console.log(error);
+      alert("Image upload error");
+    }
+
+    setUploading(false);
+  };
+
   const clearForm = () => {
     setName("");
     setPrice("");
@@ -83,6 +116,11 @@ export default function AdminPage() {
   };
 
   const addProduct = async () => {
+    if (!name || !price || !image) {
+      alert("Please enter name, price and upload image");
+      return;
+    }
+
     try {
       if (editingId) {
         await updateDoc(doc(db, "products", editingId), {
@@ -123,8 +161,7 @@ export default function AdminPage() {
   };
 
   const deleteProduct = async (id: string) => {
-    const confirmDelete = confirm("Delete this product?");
-    if (!confirmDelete) return;
+    if (!confirm("Delete this product?")) return;
 
     try {
       await deleteDoc(doc(db, "products", id));
@@ -136,15 +173,9 @@ export default function AdminPage() {
     }
   };
 
-  const updateOrderStatus = async (
-    orderId: string,
-    status: string
-  ) => {
+  const updateOrderStatus = async (orderId: string, status: string) => {
     try {
-      await updateDoc(doc(db, "orders", orderId), {
-        status,
-      });
-
+      await updateDoc(doc(db, "orders", orderId), { status });
       alert(`Order marked as ${status}`);
       fetchOrders();
     } catch (error) {
@@ -157,9 +188,7 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center px-5">
         <div className="bg-white text-black rounded-3xl shadow-2xl p-10 w-full max-w-md">
-          <h1 className="text-4xl font-bold mb-3">
-            Admin Login
-          </h1>
+          <h1 className="text-4xl font-bold mb-3">Admin Login</h1>
 
           <p className="text-gray-600 mb-8">
             Enter admin password
@@ -241,12 +270,29 @@ export default function AdminPage() {
               />
 
               <input
-                type="text"
-                placeholder="Product Image URL"
-                value={image}
-                onChange={(e) => setImage(e.target.value)}
-                className="bg-white/10 border border-white/20 p-4 rounded-xl outline-none text-white placeholder-gray-300"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadImage(file);
+                }}
+                className="bg-white/10 border border-white/20 p-4 rounded-xl outline-none text-white"
               />
+
+              {uploading && (
+                <p className="text-yellow-400">
+                  Uploading image...
+                </p>
+              )}
+
+              {image && (
+                <img
+                  src={image}
+                  alt="Uploaded product"
+                  className="w-40 h-40 object-cover rounded-2xl border border-white/20"
+                />
+              )}
 
               <textarea
                 placeholder="Product Description"
@@ -274,14 +320,10 @@ export default function AdminPage() {
           </div>
 
           <div className="bg-white text-black rounded-3xl shadow-2xl p-10">
-            <h2 className="text-4xl font-bold mb-6">
-              Products
-            </h2>
+            <h2 className="text-4xl font-bold mb-6">Products</h2>
 
             {products.length === 0 ? (
-              <p className="text-gray-600">
-                No products added yet.
-              </p>
+              <p className="text-gray-600">No products added yet.</p>
             ) : (
               <div className="space-y-5 max-h-[600px] overflow-y-auto pr-2">
                 {products.map((product) => (
@@ -300,9 +342,7 @@ export default function AdminPage() {
                         {product.name}
                       </h3>
 
-                      <p className="text-gray-600">
-                        ₹{product.price}
-                      </p>
+                      <p className="text-gray-600">₹{product.price}</p>
 
                       <p className="text-gray-500 text-sm mt-1 line-clamp-2">
                         {product.description}
@@ -337,9 +377,7 @@ export default function AdminPage() {
           </h2>
 
           {orders.length === 0 ? (
-            <p className="text-gray-600">
-              No orders yet.
-            </p>
+            <p className="text-gray-600">No orders yet.</p>
           ) : (
             <div className="space-y-8">
               {orders.map((order) => (
@@ -363,9 +401,7 @@ export default function AdminPage() {
                     </div>
 
                     <div className="text-right">
-                      <p className="text-gray-500">
-                        Order Date
-                      </p>
+                      <p className="text-gray-500">Order Date</p>
 
                       <p className="font-bold">
                         {formatDate(order.createdAt)}
@@ -378,9 +414,7 @@ export default function AdminPage() {
                   </div>
 
                   <div className="mt-6">
-                    <span className="font-bold">
-                      Status:
-                    </span>
+                    <span className="font-bold">Status:</span>
 
                     <span className="ml-3 px-4 py-2 rounded-full bg-black text-white">
                       {order.status || "Pending"}
@@ -416,10 +450,7 @@ export default function AdminPage() {
                             className="flex justify-between bg-white text-black rounded-xl p-4"
                           >
                             <span>{item.name}</span>
-
-                            <span className="font-bold">
-                              ₹{item.price}
-                            </span>
+                            <span className="font-bold">₹{item.price}</span>
                           </div>
                         )
                       )}
