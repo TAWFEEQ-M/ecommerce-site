@@ -4,12 +4,20 @@ type ProductProps = {
   name: string;
   price: number;
   image: string;
+  category?: string;
+  material?: string;
+  stock?: string;
+  colors?: string[];
 };
 
 export default function ProductCard({
   name,
   price,
   image,
+  category,
+  material,
+  stock,
+  colors = [],
 }: ProductProps) {
 
   const addToCart = () => {
@@ -18,6 +26,8 @@ export default function ProductCard({
       name,
       price,
       image,
+      category,
+      material,
     };
 
     const existingCart =
@@ -37,56 +47,71 @@ export default function ProductCard({
 
   return (
 
-    <div className="bg-white text-black rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition duration-300 hover:-translate-y-2 border border-gray-200">
+    <div className="bg-white text-black rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition border border-red-100">
 
-      <div className="relative overflow-hidden">
-
-        <img
-          src={
-            image ||
-            "https://picsum.photos/500"
-          }
-          alt={name}
-          className="w-full h-72 object-cover hover:scale-110 transition duration-500"
-        />
-
-        <div className="absolute top-4 left-4 bg-yellow-400 text-black text-sm font-bold px-4 py-1 rounded-full shadow">
-          New
-        </div>
-
-      </div>
+      <img
+        src={image || "https://picsum.photos/500"}
+        alt={name}
+        className="w-full h-72 object-cover"
+      />
 
       <div className="p-6">
 
-        <h2 className="text-2xl font-bold line-clamp-1">
+        <p className="text-sm text-red-700 font-bold uppercase">
+          {category}
+        </p>
+
+        <h2 className="text-2xl font-extrabold mt-2">
           {name}
         </h2>
 
-        <p className="text-gray-500 mt-3 leading-relaxed">
+        <p className="text-gray-600 mt-2">
+          Material: {material}
+        </p>
 
-          Premium quality product with modern
-          design and excellent customer
-          satisfaction.
+        <p className="mt-2 font-semibold">
+
+          Stock:{" "}
+
+          <span
+            className={
+              Number(stock) > 0
+                ? "text-green-600"
+                : "text-red-600"
+            }
+          >
+            {Number(stock) > 0
+              ? `${stock} available`
+              : "Out of stock"}
+          </span>
 
         </p>
 
+        <div className="flex flex-wrap gap-2 mt-4">
+
+          {colors.map((color, index) => (
+
+            <span
+              key={index}
+              className="border border-gray-300 px-3 py-1 rounded-full text-sm"
+            >
+              {color}
+            </span>
+
+          ))}
+
+        </div>
+
         <div className="flex items-center justify-between mt-8">
 
-          <div>
-
-            <p className="text-sm text-gray-400">
-              Price
-            </p>
-
-            <p className="text-3xl font-extrabold text-black">
-              ₹{price}
-            </p>
-
-          </div>
+          <p className="text-3xl font-extrabold text-red-700">
+            ₹{price}
+          </p>
 
           <button
             onClick={addToCart}
-            className="bg-black text-white px-6 py-3 rounded-full font-semibold hover:bg-gray-800 transition shadow-lg"
+            disabled={Number(stock) <= 0}
+            className="bg-red-700 text-white px-6 py-3 rounded-full font-semibold hover:bg-red-800 disabled:bg-gray-400"
           >
             Add to Cart
           </button>
